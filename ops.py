@@ -104,20 +104,21 @@ def deconv2d(input_, output_shape,
        k_h=5, k_w=5, d_h=2, d_w=2, stddev=0.02,
        name="deconv2d", with_w=False):
   with tf.variable_scope(name):
-    # filter : [height, width, output_channels, in_channels]
-    w = tf.get_variable('w', [k_h, k_w, input_.get_shape()[-1], output_shape[-1]],
-              initializer=tf.random_normal_initializer(stddev=stddev))
 
+
+    # filter : [height, width, output_channels, in_channels]
     # w2 = tf.get_variable('w2', [k_h, k_w, output_shape[-1], input_.get_shape()[-1]],
     #           initializer=tf.random_normal_initializer(stddev=stddev))
     #
     # deconv_1 = tf.nn.conv2d_transpose(input_, w2, output_shape=output_shape,
     #             strides=[1, d_h, d_w, 1])
 
-    resize = tf.image.resize_nearest_neighbor(input_, output_shape[1:-1])
-    deconv = tf.nn.conv2d(resize, w, strides=[1, d_h, d_w, 1], padding='SAME')
+    w = tf.get_variable('w', [k_h, k_w, input_.get_shape()[-1], output_shape[-1]],
+              initializer=tf.random_normal_initializer(stddev=stddev))
 
-    # print('KEKEKEK')
+    resize = tf.image.resize_nearest_neighbor(input_, output_shape[1:-1])
+    deconv = tf.nn.conv2d(resize, w, strides=[1, 1, 1, 1], padding='SAME')
+    #print('KEKEKEK', input_.shape, resize.shape, w.shape, deconv.shape)
 
     biases = tf.get_variable('biases', [output_shape[-1]], initializer=tf.constant_initializer(0.0))
     reshape_deconv = tf.reshape(tf.nn.bias_add(deconv, biases), output_shape)
