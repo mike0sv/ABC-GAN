@@ -1,5 +1,5 @@
 import math
-import numpy as np 
+import numpy as np
 import tensorflow as tf
 from scipy import ndimage
 
@@ -38,7 +38,7 @@ def gkern(l=5, sig=1.):
   return kernel / np.sum(kernel)
 
 def gauss_blur_kernel(sigma, kernel_length=9):
-  kernel = gkern(l=kernel_length, sig=sigma)  
+  kernel = gkern(l=kernel_length, sig=sigma)
   kernel = np.divide(kernel, 3.0) # divide by three because of the three color channels
   kernel = np.array([kernel,kernel,kernel])
   blur_gauss_kernel_4d = kernel.reshape(kernel_length, kernel_length,3,1)
@@ -48,7 +48,7 @@ def gauss_blur(img_batch,
                 batch_size,
                 kernel,
                 output_height=64,
-                blur_strategy="None"): 
+                blur_strategy="None"):
   """
   layer for applying gaussian blur
   """
@@ -56,11 +56,11 @@ def gauss_blur(img_batch,
   if blur_strategy == "None":
     return img_batch
 
-  output = tf.nn.depthwise_conv2d(img_batch, 
-                                      kernel, 
-                                      strides=[1,1,1,1], 
+  output = tf.nn.depthwise_conv2d(img_batch,
+                                      kernel,
+                                      strides=[1,1,1,1],
                                       padding='SAME')
-  
+
   output = tf.reshape(output, [batch_size, output_height, output_height, 3])
   return output
 
@@ -73,7 +73,7 @@ class batch_norm(object):
 
   def __call__(self, x, train=True):
     return tf.contrib.layers.batch_norm(x,
-                      decay=self.momentum, 
+                      decay=self.momentum,
                       updates_collections=None,
                       epsilon=self.epsilon,
                       scale=True,
@@ -87,7 +87,7 @@ def conv_cond_concat(x, y):
   return concat([
     x, y*tf.ones([x_shapes[0], x_shapes[1], x_shapes[2], y_shapes[3]])], 3)
 
-def conv2d(input_, output_dim, 
+def conv2d(input_, output_dim,
        k_h=5, k_w=5, d_h=2, d_w=2, stddev=0.02,
        name="conv2d"):
   with tf.variable_scope(name):
@@ -105,20 +105,28 @@ def deconv2d(input_, output_shape,
        name="deconv2d", with_w=False):
   with tf.variable_scope(name):
     # filter : [height, width, output_channels, in_channels]
-    w = tf.get_variable('w', [k_h, k_w, output_shape[-1], input_.get_shape()[-1]],
+    w = tf.get_variable('w', [k_h, k_w, input_.get_shape()[-1], output_shape[-1]],
               initializer=tf.random_normal_initializer(stddev=stddev))
 
-    resize = tf.image.resize_nearest_neighbor(input_, output_shape)
+    # w2 = tf.get_variable('w2', [k_h, k_w, output_shape[-1], input_.get_shape()[-1]],
+    #           initializer=tf.random_normal_initializer(stddev=stddev))
+    #
+    # deconv_1 = tf.nn.conv2d_transpose(input_, w2, output_shape=output_shape,
+    #             strides=[1, d_h, d_w, 1])
+
+    resize = tf.image.resize_nearest_neighbor(input_, output_shape[1:-1])
     deconv = tf.nn.conv2d(resize, w, strides=[1, d_h, d_w, 1], padding='SAME')
 
+    # print('KEKEKEK')
+
     biases = tf.get_variable('biases', [output_shape[-1]], initializer=tf.constant_initializer(0.0))
-    deconv = tf.reshape(tf.nn.bias_add(deconv, biases), deconv.get_shape())
+    reshape_deconv = tf.reshape(tf.nn.bias_add(deconv, biases), output_shape)
 
     if with_w:
-      return deconv, w, biases
+      return reshape_deconv, w, biases
     else:
-      return deconv
-     
+      return reshape_deconv
+
 def lrelu(x, leak=0.2, name="lrelu"):
   return tf.maximum(x, leak*x)
 
