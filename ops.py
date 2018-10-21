@@ -116,7 +116,8 @@ def deconv2d(input_, output_shape,
     w = tf.get_variable('w', [k_h, k_w, input_.get_shape()[-1], output_shape[-1]],
               initializer=tf.random_normal_initializer(stddev=stddev))
 
-    resize = tf.image.resize_nearest_neighbor(input_, output_shape[1:-1])
+    # resize = tf.image.resize_nearest_neighbor(input_, output_shape[1:-1])
+    resize = tf.image.resize_bilinear(input_, output_shape[1:-1])
     deconv = tf.nn.conv2d(resize, w, strides=[1, 1, 1, 1], padding='SAME')
     #print('KEKEKEK', input_.shape, resize.shape, w.shape, deconv.shape)
 
