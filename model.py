@@ -219,7 +219,7 @@ class DCGAN(object):
     self.d_sum = merge_summary(
         [self.z_sum, self.d_sum, self.d_loss_real_sum, self.d_loss_sum])
     
-    self.writer = SummaryWriter(self.log_dir + '/Discriminator', self.sess.graph)
+    self.writer = SummaryWriter(self.log_dir + '/Discriminator')
     self.writer2 = SummaryWriter(self.log_dir + '/Generator')
 
     sample_z = np.random.uniform(-1, 1, size=(self.sample_num , self.z_dim))
